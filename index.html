@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🎡 Wheel of Food — Decide Dinner!</title>
+<style>
+  :root{
+    --bg1:#1a0f0a; --bg2:#3b1d0e;
+    --card:#fff8ec; --accent:#ff4d2e; --accent2:#ffb703;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:"Trebuchet MS", "Comic Sans MS", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background:
+      radial-gradient(circle at 20% 10%, #ff9f1c55 0 200px, transparent 201px),
+      radial-gradient(circle at 90% 20%, #ff595e44 0 240px, transparent 241px),
+      radial-gradient(circle at 50% 90%, #ffca3a33 0 300px, transparent 301px),
+      linear-gradient(160deg, #1a0f0a, #3b1d0e 60%, #5a2800);
+    color:#fff8ec; min-height:100vh;
+  }
+  header{
+    text-align:center; padding:18px 12px 6px;
+  }
+  header h1{
+    margin:0; font-size:clamp(28px,5vw,52px); letter-spacing:1px;
+    text-shadow:0 4px 0 #7a2600, 0 8px 24px #000;
+    transform:rotate(-1.5deg);
+  }
+  header p{margin:6px 0 0; opacity:.9; font-style:italic}
+  main{
+    display:flex; gap:18px; max-width:1200px; margin:12px auto 40px; padding:0 14px;
+    align-items:flex-start;
+  }
+  @media(max-width:900px){ main{flex-direction:column} }
+  .panel{
+    background:var(--card); color:#3a1e0e; border-radius:20px; padding:16px;
+    box-shadow:0 12px 0 #7a2600, 0 20px 50px #000a;
+    border:4px dashed #ff4d2e;
+  }
+  .left{flex:0 0 360px; width:100%}
+  .left h2{margin:0 0 4px; font-size:22px}
+  .left small{opacity:.7}
+  .row{
+    display:flex; gap:6px; align-items:center; margin:8px 0;
+    background:#fff; border:2px solid #ffd6a5; border-radius:12px; padding:6px;
+  }
+  .row .num{
+    flex:0 0 32px; height:32px; display:grid; place-items:center;
+    background:#3a1e0e; color:#fff; border-radius:50%; font-weight:900;
+  }
+  .row input{
+    border:1px solid #e9c893; border-radius:8px; padding:8px; font-size:14px; width:100%;
+  }
+  .row input.name{font-weight:700; flex:1.2}
+  .row input.link{flex:1; font-size:12px; color:#555}
+  .btn{
+    cursor:pointer; border:none; border-radius:14px; padding:12px 16px;
+    font-weight:900; font-size:16px; transition:.15s;
+  }
+  .btn:active{transform:scale(.96)}
+  .btn-row{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap}
+  .btn-ghost{background:#ffe8c2; color:#5a2800; border:2px solid #5a2800}
+  .btn-ghost:hover{background:#ffd79b}
+  .right{flex:1; text-align:center; background:#fff8ec; color:#3a1e0e; border-radius:24px; padding:18px;
+    border:6px solid #ffb703; box-shadow:0 12px 0 #7a2600, 0 20px 60px #000c; position:relative; overflow:hidden}
+  .right::before{
+    content:"🍔 🍕 🌮 🍩 🍣 🍜 🧋 🥞 🍔 🍕 🌮 🍩"; position:absolute; top:6px; left:0; right:0;
+    opacity:.18; white-space:nowrap; overflow:hidden; font-size:22px; pointer-events:none;
+  }
+  #wheelWrap{position:relative; width:min(560px,90vw); margin:8px auto; filter:drop-shadow(0 12px 24px #0006)}
+  #wheel{width:100%; height:auto; display:block; border-radius:50%}
+  #wheel.spinning{filter:saturate(1.3) drop-shadow(0 0 24px #ff4d2e)}
+  .pointer{
+    position:absolute; top:-10px; left:50%; transform:translateX(-50%);
+    font-size:52px; filter:drop-shadow(0 4px 4px #0008); z-index:5;
+    animation:bob 1s infinite alternate ease-in-out;
+  }
+  @keyframes bob{from{transform:translateX(-50%) rotate(-8deg)}to{transform:translateX(-50%) rotate(8deg) translateY(4px)}}
+  .hub{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:92px; height:92px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #fff, #ffb703 60%, #b97a00);
+    border:5px solid #5a2800; display:grid; place-items:center; font-size:48px; z-index:4;
+    box-shadow:0 4px 12px #0008;
+  }
+  #spinBtn{
+    font-size:26px; padding:16px 46px; margin:12px 0 6px;
+    background:linear-gradient(180deg,#ff4d2e,#b81e00); color:#fff; letter-spacing:1px;
+    border:4px solid #3a1e0e; border-radius:999px; box-shadow:0 6px 0 #3a1e0e, 0 10px 24px #0007;
+    cursor:pointer; text-transform:uppercase;
+  }
+  #spinBtn:disabled{opacity:.6; cursor:wait; filter:grayscale(.4)}
+  #spinBtn:not(:disabled):hover{transform:scale(1.04) rotate(-1deg)}
+  #commentary{min-height:52px; font-size:18px; font-weight:700; margin:8px 0; color:#7a2600}
+  .shake{animation:shake .4s infinite}
+  @keyframes shake{
+    0%{transform:translate(0,0) rotate(0)}25%{transform:translate(-6px,3px) rotate(-.6deg)}
+    50%{transform:translate(5px,-4px) rotate(.6deg)}75%{transform:translate(-4px,-2px)}100%{transform:translate(4px,3px)}
+  }
+  /* fireworks canvas */
+  #fireworks{position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:50; display:none}
+  /* winner modal */
+  #winnerModal{
+    position:fixed; inset:0; z-index:60; display:none; place-items:center;
+    background:rgba(20,8,0,.72); backdrop-filter:blur(3px); padding:16px;
+  }
+  #winnerModal.show{display:grid}
+  .winner-card{
+    background:#fff8ec; color:#3a1e0e; max-width:520px; width:100%; border-radius:24px; padding:28px 22px;
+    text-align:center; border:6px solid #ff4d2e; box-shadow:0 0 0 6px #ffb703, 0 30px 80px #000;
+    animation:pop .5s cubic-bezier(.2,1.6,.4,1);
+  }
+  @keyframes pop{from{transform:scale(.5) rotate(-6deg); opacity:0}to{transform:scale(1) rotate(0); opacity:1}}
+  .winner-card h2{margin:0; font-size:30px; color:#b81e00}
+  .winner-card .dish{font-size:64px; margin:8px 0}
+  .winner-name{font-size:28px; font-weight:900; background:#ffb703; display:inline-block; padding:8px 18px; border-radius:999px; border:3px solid #3a1e0e; margin:10px 0; max-width:100%; word-break:break-word}
+  .winner-sub{font-style:italic; opacity:.8}
+  .winner-btns{display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap}
+  #okBtn{background:#2a9d48; color:#fff; border:3px solid #123d1f; font-size:20px; padding:12px 36px}
+  #visitBtn{background:#1982c4; color:#fff; border:3px solid #0b3550; text-decoration:none; display:inline-block; padding:12px 22px; border-radius:14px; font-weight:900}
+  footer{text-align:center; opacity:.6; padding-bottom:24px; font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎡 WHEEL OF FOOD 🍔</h1>
+  <p>Can't decide? Let the ancient Food Gods choose your fate… no backsies (until you click OK).</p>
+</header>
+
+<main>
+  <aside class="panel left">
+    <h2>🍽️ Your 8 Contenders</h2>
+    <small>Auto-saves on this device (localStorage). Name + optional link/menu URL.</small>
+    <div id="inputs"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="examplesBtn">✨ Tasty examples</button>
+      <button class="btn btn-ghost" id="clearBtn">🧹 Clear</button>
+    </div>
+    <p style="font-size:13px;opacity:.7;margin-bottom:0">Tip: paste a Google Maps / DoorDash / menu link so the winner is clickable. 😋</p>
+  </aside>
+
+  <section class="right" id="stage">
+    <div id="wheelWrap">
+      <div class="pointer">👇🧀</div>
+      <canvas id="wheel" width="700" height="700"></canvas>
+      <div class="hub">🍽️</div>
+    </div>
+    <div id="commentary">Ready? Press SPIN and pray to the pizza gods. 🙏🍕</div>
+    <button id="spinBtn">🎰 SPIN! 🎰</button>
+    <div style="font-size:13px;opacity:.7">Winner picked with <code>seconds</code> as random seed ⏱️ — certified chaotic neutral.</div>
+  </section>
+</main>
+
+<canvas id="fireworks"></canvas>
+
+<div id="winnerModal">
+  <div class="winner-card">
+    <h2>🏆 WINNER WINNER<br/>CHICKEN DINNER! 🍗</h2>
+    <div class="dish" id="winnerEmoji">🍔</div>
+    <div class="winner-name" id="winnerName">???</div>
+    <div class="winner-sub" id="winnerJoke">The Food Gods have spoken.</div>
+    <div class="winner-btns">
+      <a id="visitBtn" href="#" target="_blank" rel="noopener" style="display:none">🔗 Visit / Order →</a>
+      <button class="btn" id="okBtn">OK — FEED ME! 😋</button>
+    </div>
+  </div>
+</div>
+
+<footer>Made with 🧈 butter, 🧀 cheese & questionable decisions. Self-contained HTML/CSS/JS. No restaurants were harmed.</footer>
+
+<script>
+(function(){
+  const COUNT = 8;
+  const KEY = "wheel_of_food_v1";
+  const COLORS = ["#ff595e","#ffca3a","#8ac926","#1982c4","#6a4c93","#ff924c","#ff70a6","#00b4a2"];
+  const EMOJIS = ["🍔","🍕","🌮","🍩","🍣","🍜","🥞","🧋"];
+  const JOKES = [
+    "The Food Gods have spoken. No appeals. 🏛️",
+    "Your stomach overruled your brain. 🧠❌",
+    "Destiny tastes delicious. 😌👌",
+    "The wheel never lies. It only makes you sweaty. 🥵",
+    "Scientists confirm: this was 100% fate and 0% hunger. 🔬",
+    "Your wallet just sighed. 💸",
+    "Do not question the wheel. The wheel is full of cheese. 🧀",
+    "A great choice. A brave choice. A greasy choice. 🍟"
+  ];
+  const SPIN_LINES = [
+    "Consulting the Food Gods… 🏛️",
+    "Warming up the deep fryer… 🍟",
+    "Polishing the pepperoni… 🍕",
+    "Asking Gordon Ramsay… 🤬",
+    "Churning the butter… 🧈",
+    "Summoning extra cheese… 🧀",
+    "Bribing the wheel with bacon… 🥓",
+    "Defrosting destiny… ❄️🍗",
+    "Taste-testing fate… 👅",
+    "HOLD ONTO YOUR NAPKINS!! 🤯"
+  ];
+
+  const inputsEl = document.getElementById("inputs");
+  const wheel = document.getElementById("wheel");
+  const ctx = wheel.getContext("2d");
+  const spinBtn = document.getElementById("spinBtn");
+  const commentary = document.getElementById("commentary");
+  const stage = document.getElementById("stage");
+  const modal = document.getElementById("winnerModal");
+  const winnerName = document.getElementById("winnerName");
+  const winnerEmoji = document.getElementById("winnerEmoji");
+  const winnerJoke = document.getElementById("winnerJoke");
+  const visitBtn = document.getElementById("visitBtn");
+  const okBtn = document.getElementById("okBtn");
+  const fwCanvas = document.getElementById("fireworks");
+  const fctx = fwCanvas.getContext("2d");
+
+  let entries = load();
+  let rotation = 0; // degrees
+  let spinning = false;
+  let spinCount = 0;
+  let fwRunning = false, fwParticles = [], fwTimer = null;
+
+  // ---------- storage ----------
+  function load(){
+    try{
+      const raw = localStorage.getItem(KEY);
+      if(raw){
+        const p = JSON.parse(raw);
+        if(Array.isArray(p) && p.length===COUNT) return p;
+      }
+    }catch(e){}
+    return Array.from({length:COUNT},()=>({name:"",link:""}));
+  }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(entries)); }catch(e){} }
+
+  // ---------- inputs ----------
+  function buildInputs(){
+    inputsEl.innerHTML = "";
+    entries.forEach((e,i)=>{
+      const div = document.createElement("div");
+      div.className = "row";
+      div.innerHTML =
+        '<div class="num">'+EMOJIS[i]+'</div>' +
+        '<input class="name" maxlength="40" placeholder="e.g. Taco Hell">' +
+        '<input class="link" placeholder="link (optional)">';
+      const n = div.querySelector(".name"), l = div.querySelector(".link");
+      n.value = e.name||""; l.value = e.link||"";
+      n.addEventListener("input",()=>{entries[i].name=n.value; save(); drawWheel();});
+      l.addEventListener("input",()=>{entries[i].link=l.value; save();});
+      inputsEl.appendChild(div);
+    });
+  }
+  document.getElementById("examplesBtn").onclick = ()=>{
+    entries = [
+      {name:"Taco Hell 🌮", link:""},
+      {name:"Pizza My Heart 🍕", link:""},
+      {name:"Burger Kingpin 🍔", link:""},
+      {name:"Sushi Panic 🍣", link:""},
+      {name:"Pho Real 🍜", link:""},
+      {name:"Donut Panic 🍩", link:""},
+      {name:"Pancake Stack 🥞", link:""},
+      {name:"Boba Fett 🧋", link:""}
+    ];
+    save(); buildInputs(); drawWheel();
+  };
+  document.getElementById("clearBtn").onclick = ()=>{
+    entries = Array.from({length:COUNT},()=>({name:"",link:""}));
+    save(); buildInputs(); drawWheel();
+  };
+
+  function label(i){
+    const n = (entries[i] && entries[i].name || "").trim();
+    return n || ("Mystery Meal "+(i+1)+" 🤷");
+  }
+
+  // ---------- wheel drawing ----------
+  function drawWheel(){
+    const W=wheel.width, H=wheel.height, cx=W/2, cy=H/2, R=W/2-14;
+    ctx.clearRect(0,0,W,H);
+    const slice = Math.PI*2/COUNT;
+    for(let i=0;i<COUNT;i++){
+      const a0 = rotation*Math.PI/180 + i*slice;
+      const a1 = a0 + slice;
+      // slice
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,R,a0,a1); ctx.closePath();
+      ctx.fillStyle = COLORS[i%COLORS.length]; ctx.fill();
+      ctx.lineWidth = 5; ctx.strokeStyle = "#3a1e0e"; ctx.stroke();
+      // inner dotted flavor ring
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,R*0.72,a0+0.02,a1-0.02); ctx.closePath();
+      ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fill();
+      ctx.restore();
+      // text
+      ctx.save();
+      ctx.translate(cx,cy);
+      ctx.rotate(a0+slice/2);
+      ctx.textAlign="right"; ctx.fillStyle="#2b1405";
+      ctx.font="bold 26px Trebuchet MS, sans-serif";
+      const txt = (EMOJIS[i]+" "+label(i)).slice(0,22);
+      // shrink long names
+      if(txt.length>16) ctx.font="bold 20px Trebuchet MS, sans-serif";
+      if(txt.length>20) ctx.font="bold 17px Trebuchet MS, sans-serif";
+      ctx.fillText(txt, R-18, 8);
+      ctx.restore();
+    }
+    // outer rim
+    ctx.beginPath(); ctx.arc(cx,cy,R+6,0,Math.PI*2);
+    ctx.lineWidth=12; ctx.strokeStyle="#ffb703"; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,cy,R+12,0,Math.PI*2);
+    ctx.lineWidth=4; ctx.strokeStyle="#3a1e0e"; ctx.stroke();
+    // bulbs
+    for(let k=0;k<24;k++){
+      const a=k/24*Math.PI*2 + rotation*Math.PI/180/4;
+      const bx=cx+Math.cos(a)*(R+6), by=cy+Math.sin(a)*(R+6);
+      ctx.beginPath(); ctx.arc(bx,by,6,0,Math.PI*2);
+      ctx.fillStyle = (k%2? "#fff8ec":"#ff4d2e"); ctx.fill();
+      ctx.lineWidth=2; ctx.strokeStyle="#3a1e0e"; ctx.stroke();
+    }
+  }
+
+  // ---------- seeded random (seconds as seed, per spec) ----------
+  function mulberry32(a){
+    return function(){
+      a|=0; a=a+0x6D2B79F5|0;
+      let t=Math.imul(a^a>>>15,1|a);
+      t=t+Math.imul(t^t>>>7,61|t)^t;
+      return ((t^t>>>14)>>>0)/4294967296;
+    };
+  }
+  function pickWinner(){
+    const seconds = new Date().getSeconds(); // <-- THE SEED (0-59), required by spec
+    spinCount++;
+    // Mix seconds-seed with spinCount so two spins inside the same second don't tie.
+    // Seconds is still the dominant entropy source.
+    const seed = (seconds+1)*9301 + spinCount*49297;
+    const rng = mulberry32(seed);
+    const winner = Math.floor(rng()*COUNT);
+    const extraSpins = 6 + Math.floor(rng()*4); // 6-9 full turns for drama
+    const duration = 6200 + rng()*2800;         // 6.2-9s of agony
+    return {winner, extraSpins, duration, seconds};
+  }
+
+  // ---------- audio (tiny synth, no files) ----------
+  let AC=null;
+  function ac(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return AC; }
+  function blip(freq,dur,type){
+    try{
+      const c=ac(); if(!c) return;
+      const o=c.createOscillator(), g=c.createGain();
+      o.type=type||"square"; o.frequency.value=freq;
+      g.gain.setValueAtTime(0.08,c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+      o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+dur);
+    }catch(e){}
+  }
+  function fanfare(){
+    [523,659,784,1046,784,1046,1318].forEach((f,i)=>setTimeout(()=>blip(f,.35,"triangle"),i*160));
+  }
+
+  // ---------- spin ----------
+  spinBtn.onclick = ()=>{
+    if(spinning) return;
+    ac(); // unlock audio on gesture
+    spinning = true; spinBtn.disabled = true;
+    wheel.classList.add("spinning");
+    const {winner, extraSpins, duration, seconds} = pickWinner();
+    const sliceDeg = 360/COUNT;
+    // pointer is at top = 270deg in canvas coords. Winner center must end there.
+    const winnerCenter = winner*sliceDeg + sliceDeg/2;
+    let target = 270 - winnerCenter + 360*extraSpins;
+    // advance target ahead of current rotation
+    while(target <= rotation) target += 360;
+    // add tiny random offset inside winning slice so it doesn't always hit dead-center (still a win)
+    const jitter = (mulberry32(seconds*1337+spinCount*77)()-0.5)* (sliceDeg*0.6);
+    target += jitter;
+
+    const startRot = rotation, delta = target - startRot;
+    const t0 = performance.now();
+    let lastTickSlice = Math.floor(startRot/sliceDeg);
+    let msgTimer = setInterval(()=>{
+      commentary.textContent = SPIN_LINES[Math.floor(Math.random()*SPIN_LINES.length)];
+    },850);
+    stage.classList.remove("shake");
+
+    function easeOutQuint(t){ return 1-Math.pow(1-t,5); }
+
+    function frame(now){
+      const t = Math.min(1,(now-t0)/duration);
+      // dramatic easing + end wobble + fake-out slowdown near 70%
+      let e = easeOutQuint(t);
+      if(t>0.6 && t<0.75) e -= Math.sin((t-0.6)/0.15*Math.PI)*0.015; // fake stall — comedy!
+      if(t>0.88) e += Math.sin((t-0.88)/0.12*Math.PI*3)*0.004;       // wobble — drama!
+      rotation = startRot + delta*e;
+      drawWheel();
+      // tick sound on slice pass, pitch rises as it slows for comedy
+      const cur = Math.floor(rotation/sliceDeg);
+      if(cur!==lastTickSlice){
+        lastTickSlice=cur;
+        const progress=t;
+        blip(300+progress*700, .05, "square");
+        // shake near the end
+        if(t>0.8) stage.classList.add("shake");
+      }
+      if(t<1){ requestAnimationFrame(frame); }
+      else{
+        clearInterval(msgTimer);
+        stage.classList.remove("shake");
+        rotation = target; drawWheel();
+        wheel.classList.remove("spinning");
+        commentary.textContent = "🥁 DRUMROLL… the grease has settled… 🥁";
+        blip(150,.6,"sawtooth");
+        setTimeout(()=>showWinner(winner), 900);
+      }
+    }
+    requestAnimationFrame(frame);
+  };
+
+  // ---------- winner + food fireworks ----------
+  function showWinner(i){
+    fanfare();
+    winnerName.textContent = label(i);
+    winnerEmoji.textContent = EMOJIS[i%EMOJIS.length];
+    winnerJoke.textContent = JOKES[Math.floor(Math.random()*JOKES.length)];
+    const link = (entries[i].link||"").trim();
+    if(link){
+      let url = link;
+      if(!/^https?:\/\//i.test(url)) url = "https://"+url;
+      visitBtn.style.display="inline-block"; visitBtn.href=url;
+    } else visitBtn.style.display="none";
+    modal.classList.add("show");
+    startFireworks();
+    commentary.textContent = "🏆 "+label(i)+" WINS! Click OK to release the wheel. 🏆";
+  }
+  okBtn.onclick = ()=>{
+    // "things refresh": close modal, stop fireworks, re-enable wheel
+    modal.classList.remove("show");
+    stopFireworks();
+    spinning = false; spinBtn.disabled = false;
+    commentary.textContent = "Wheel refreshed! Still hungry? SPIN AGAIN. 🍔🔄";
+    drawWheel();
+  };
+
+  function resizeFw(){ fwCanvas.width=innerWidth; fwCanvas.height=innerHeight; }
+  addEventListener("resize",resizeFw); resizeFw();
+
+  const FOOD = ["🍔","🍕","🌮","🍩","🍣","🍜","🥓","🧀","🍟","🧋","🍗","🥞","🍦","🥑"];
+  function startFireworks(){
+    fwCanvas.style.display="block";
+    fwRunning=true; fwParticles=[];
+    fwTimer=setInterval(()=>{
+      // launch 2-3 bursts
+      for(let b=0;b<3;b++){
+        const x=Math.random()*fwCanvas.width, y=Math.random()*fwCanvas.height*0.5;
+        const emoji=FOOD[Math.floor(Math.random()*FOOD.length)];
+        for(let p=0;p<26;p++){
+          const a=Math.random()*Math.PI*2, sp=2+Math.random()*6;
+          fwParticles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,life:1,decay:0.008+Math.random()*0.012,emoji,size:14+Math.random()*22});
+        }
+      }
+      // big text pop
+      blip(400+Math.random()*600,.12,"triangle");
+    },500);
+    requestAnimationFrame(fwFrame);
+  }
+  function fwFrame(){
+    if(!fwRunning) return;
+    fctx.clearRect(0,0,fwCanvas.width,fwCanvas.height);
+    fwParticles = fwParticles.filter(p=>p.life>0);
+    for(const p of fwParticles){
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.vx*=0.98; p.life-=p.decay;
+      fctx.globalAlpha=Math.max(0,p.life);
+      fctx.font=p.size+"px serif";
+      fctx.fillText(p.emoji,p.x,p.y);
+    }
+    fctx.globalAlpha=1;
+    requestAnimationFrame(fwFrame);
+  }
+  function stopFireworks(){
+    fwRunning=false; clearInterval(fwTimer);
+    fctx.clearRect(0,0,fwCanvas.width,fwCanvas.height);
+    fwCanvas.style.display="none"; fwParticles=[];
+  }
+
+  buildInputs(); drawWheel();
+})();
+</script>
+</body>
+</html>
